@@ -1,0 +1,12 @@
+name: logger
+version: 0.1.0
+
+dependencies:
+  cossack:
+    github: greyblake/crystal-cossack
+    version: ~> 0.1
+
+authors:
+  - Leonard Schuetz <leni.schuetz@me.com>
+
+license: MIT
