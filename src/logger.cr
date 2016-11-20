@@ -1,5 +1,4 @@
 require "./logger/*"
-require "yaml"
 require "option_parser"
 
 module Logger
@@ -7,6 +6,12 @@ module Logger
   arguments = [] of String
   password = ""
   option_parser = nil
+
+  COMMANDS = <<-CMD
+
+  Available commands:
+    list                               List all available log files
+  CMD
 
   OptionParser.parse! do |opts|
     option_parser = opts
@@ -24,6 +29,7 @@ module Logger
 
     opts.on("-h", "--help", "Print this help message") {
       puts opts
+      puts COMMANDS
       exit
     }
 
@@ -36,11 +42,31 @@ module Logger
   if password == ""
     puts "Missing password"
     puts option_parser
+    puts COMMANDS
+    exit 1
+  end
+
+  # Check if a command was given
+  unless arguments.size > 0
+    puts "Missing command"
+    puts option_parser
+    puts COMMANDS
     exit 1
   end
 
   fetcher = Fetch.new password
 
-  # Log
-  puts "Connected to #{Fetch::FETCH_ENDPOINT}"
+  case arguments[0]
+  when "list"
+    fetcher.list do |list|
+      list.each do |item|
+        puts "#{item}"
+      end
+    end
+  else
+    puts "#{arguments[0]} is not a valid command"
+    puts option_parser
+    puts COMMANDS
+    exit 1
+  end
 end
