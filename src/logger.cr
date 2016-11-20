@@ -8,12 +8,14 @@ module Logger
   option_parser = nil
   dump_start = 0
   dump_end = -1
+  input_filename = ""
 
   COMMANDS = <<-CMD
 
   Available commands:
     list                               List all available log files
     dump                               Dump the contents of log files to STDOUT
+    analyse                            Analyse a given log file
   CMD
 
   OptionParser.parse! do |opts|
@@ -33,6 +35,10 @@ module Logger
       dump_end = de.to_i32
     }
 
+    opts.on("-i FILENAME", "--input FILENAME", "Filename for the analyse command") { |filename|
+      input_filename = filename
+    }
+
     opts.on("-v", "--version", "Prints the version number") {
       puts "0.1.0"
       exit
@@ -49,14 +55,6 @@ module Logger
     end
   end
 
-  # Check if a password was given
-  if password == ""
-    puts "Missing password"
-    puts option_parser
-    puts COMMANDS
-    exit 1
-  end
-
   # Check if a command was given
   unless arguments.size > 0
     puts "Missing command"
@@ -65,10 +63,18 @@ module Logger
     exit 1
   end
 
-  fetcher = Fetch.new password
-
   case arguments[0]
   when "list"
+
+    # Check if a password was given
+    if password == ""
+      puts "Missing password"
+      puts option_parser
+      puts COMMANDS
+      exit 1
+    end
+
+    fetcher = Fetch.new password
     fetcher.list do |list|
       list.each do |item|
         puts "#{item}"
@@ -76,8 +82,40 @@ module Logger
     end
   when "dump"
 
+    # Check if a password was given
+    if password == ""
+      puts "Missing password"
+      puts option_parser
+      puts COMMANDS
+      exit 1
+    end
+
+    fetcher = Fetch.new password
     fetcher.dump(dump_start..dump_end) do |content|
-      puts content
+      puts content.strip
+    end
+  when "analyse"
+
+    # Check that the filename is given
+    if input_filename == ""
+      puts "No input filename given"
+      puts option_parser
+      puts COMMANDS
+      exit 1
+    end
+
+    # Check that the file exists
+    unless File.exists?(input_filename) && File.readable?(input_filename)
+      puts "Could not open #{input_filename}"
+      puts option_parser
+      puts COMMANDS
+      exit 1
+    end
+
+    file = File.open(input_filename)
+    analyser = Analyse.new
+    analyser.analyse(file) do |result|
+      puts result
     end
   else
     puts "#{arguments[0]} is not a valid command"
