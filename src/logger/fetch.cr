@@ -25,7 +25,32 @@ module Logger
         raise Exception.new("logs is not an array")
       end
 
-      yield list
+      # Check that each value is a string
+      values = [] of String
+      list.each do |item|
+        if item.is_a? String
+          values << item
+        end
+      end
+
+      yield values
+    end
+
+    # Yields the contents of all logfiles inside *range*
+    def dump(range)
+      list do |logs|
+        logs[range].each do |log|
+
+          # Request the contents of the file from the server
+          response = @client.get("/resources/logs/#{log}")
+
+          if response.headers["Content-Type"] == "application/json"
+            raise Exception.new("Got JSON back: #{response.body}")
+          else
+            yield response.body
+          end
+        end
+      end
     end
   end
 
